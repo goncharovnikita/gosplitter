@@ -18,4 +18,4 @@ install:
   - ln -s $GOPATH/src/github.com/goncharovnikita/go
   - ./install-deps.sh
 
-script: go test ./... -cover
+script: go test ./...
