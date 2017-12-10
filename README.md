@@ -13,7 +13,7 @@ Go provide out of the box route handling, but it is not possible to
 
 ## Hot to use
 
-```golang
+```Go
   gosplitter.Match("/your/path", *http.ServeMux, http.Handler|http.HandleFunc|interface{})
 ```
 
@@ -23,7 +23,7 @@ You can pass handler or another structure to chain multiple routes
 
 ## Examples
 
-```
+```Go
 /**
 * Specify handle types
  */
