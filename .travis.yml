@@ -1,0 +1,12 @@
+language: go
+
+go:
+  - 1.9.2
+  - 1.10
+
+install: 
+  - mkdir -p $GOPATH/src/github.com/goncharovnikita
+  - ln -s $GOPATH/src/github.com/goncharovnikita/go
+  - ./install-deps.sh
+
+script: go test ./... -cover
