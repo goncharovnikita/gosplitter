@@ -1,8 +1,9 @@
 package gosplitter
 
 import (
+	"fmt"
 	"net/http"
-	"runtime"
+	"strings"
 )
 
 // HandlerFunc interface
@@ -22,22 +23,24 @@ type RouterPoint struct {
 var RegisteredPatterns = make(map[string]*RouterPoint)
 
 // Match matches route
-func Match(url string, h interface{}) error {
+func Match(url string, mux *http.ServeMux, h interface{}) error {
+	fmt.Printf("%s\n", url)
 	var handler http.Handler
 	var handlerFunc HandlerFunc
-	var mux = http.NewServeMux()
+	callerContext := CallerContext()
+	fmt.Printf("Caller context: %s\n", callerContext)
 
 	switch v := h.(type) {
 	case http.Handler:
 		handler = v
-		RegisterHandler(url, CallerContext(), handler, mux)
+		RegisterHandler(url, callerContext, handler, mux)
 		break
 	case HandlerFunc:
 		handlerFunc = v
-		RegisterHandler(url, CallerContext(), handlerFunc, mux)
+		RegisterHandler(url, callerContext, handlerFunc, mux)
 		break
 	default:
-		RegisterRouterPoint(url, CallerContext())
+		RegisterRouterPoint(url, h)
 	}
 
 	return nil
@@ -47,6 +50,8 @@ func Match(url string, h interface{}) error {
 func RegisterHandler(url string, caller string, h interface{}, mux *http.ServeMux) error {
 	var handler http.Handler
 	var handlerFunc HandlerFunc
+	var callerPoints = strings.Split(caller, ".")
+	var point *RouterPoint
 	switch v := h.(type) {
 	case http.Handler:
 		handler = v
@@ -55,7 +60,14 @@ func RegisterHandler(url string, caller string, h interface{}, mux *http.ServeMu
 		handlerFunc = v
 		break
 	}
-	point := RegisteredPatterns[caller]
+
+	for i := len(callerPoints) - 1; i >= 0; i-- {
+		if v := RegisteredPatterns[callerPoints[i]]; v != nil {
+			point = v
+			break
+		}
+	}
+
 	if point == nil {
 		if handler != nil {
 			RegisteredPatterns[caller] = &RouterPoint{
@@ -81,10 +93,7 @@ func RegisterHandler(url string, caller string, h interface{}, mux *http.ServeMu
 		}
 	}
 
-	var absURL, err = GetAbsoluteURL(url, caller)
-	if err != nil {
-		return err
-	}
+	var absURL = point.URL + url
 	if point.Children == nil {
 		rMap := make(map[string]*RouterPoint)
 		point.Children = rMap
@@ -93,6 +102,7 @@ func RegisterHandler(url string, caller string, h interface{}, mux *http.ServeMu
 				URL:     absURL,
 				Handler: handler,
 			}
+			fmt.Printf("Handle %s\n", absURL)
 			mux.Handle(absURL, handler)
 			return nil
 		}
@@ -100,6 +110,7 @@ func RegisterHandler(url string, caller string, h interface{}, mux *http.ServeMu
 			URL:         absURL,
 			HandlerFunc: handlerFunc,
 		}
+		fmt.Printf("Handle %s\n", absURL)
 		mux.HandleFunc(absURL, func(w http.ResponseWriter, r *http.Request) {
 			handlerFunc.Handle(w, r)
 		})
@@ -117,6 +128,7 @@ func RegisterHandler(url string, caller string, h interface{}, mux *http.ServeMu
 			URL:     absURL,
 			Handler: handler,
 		}
+		fmt.Printf("Handle %s\n", absURL)
 		mux.Handle(absURL, handler)
 		return nil
 	}
@@ -124,6 +136,7 @@ func RegisterHandler(url string, caller string, h interface{}, mux *http.ServeMu
 		URL:         absURL,
 		HandlerFunc: handlerFunc,
 	}
+	fmt.Printf("Handle %s\n", absURL)
 	mux.HandleFunc(absURL, func(w http.ResponseWriter, r *http.Request) {
 		handlerFunc.Handle(w, r)
 	})
@@ -131,7 +144,9 @@ func RegisterHandler(url string, caller string, h interface{}, mux *http.ServeMu
 }
 
 // RegisterRouterPoint func
-func RegisterRouterPoint(url string, caller string) error {
+func RegisterRouterPoint(url string, f interface{}) error {
+	var caller = undot(GetFunctionName(f))
+	fmt.Printf("register router point for %s\n", caller)
 	var point = RegisteredPatterns[caller]
 	if point == nil {
 		// Point does not registered yet
@@ -176,32 +191,4 @@ func RegisterRouterPoint(url string, caller string) error {
 		URL: url,
 	}
 	return nil
-}
-
-// GetAbsoluteURL func
-func GetAbsoluteURL(url string, caller string) (string, error) {
-	point := RegisteredPatterns[caller]
-	if point == nil {
-		return "", &NotRegisteredPatternError{
-			pattern: url,
-		}
-	}
-	return point.URL + url, nil
-}
-
-// CallerContext func
-func CallerContext() string {
-	fpcs := make([]uintptr, 1)
-
-	n := runtime.Callers(3, fpcs)
-	if n == 0 {
-		return "n/a"
-	}
-
-	f := runtime.FuncForPC(fpcs[0] - 1)
-	if f == nil {
-		return "n/a"
-	}
-
-	return f.Name()
 }

@@ -15,7 +15,7 @@ func caller() string {
 func TestContextCaller(t *testing.T) {
 	result := caller()
 
-	assert.Equal(t, "github.com/goncharovnikita/gosplitter_test.TestContextCaller", result)
+	assert.Equal(t, "gosplitter_test.TestContextCaller", result)
 }
 
 func TestGetAbsoluteURL(t *testing.T) {
@@ -96,10 +96,14 @@ func TestRegisterHandler(t *testing.T) {
 }
 
 // Test registerRouterPoint
+type rPoint struct{}
+
 func TestRegisterRouterPoint(t *testing.T) {
 	var err error
-	err = gosplitter.RegisterRouterPoint("/test", "routerPoint")
+	var p rPoint
+	err = gosplitter.RegisterRouterPoint("/test", p)
 
 	assert.Equal(t, nil, err)
-	assert.Equal(t, "/test", gosplitter.RegisteredPatterns["routerPoint"].Children["/test"].URL)
+	t.Logf("%v\n", gosplitter.RegisteredPatterns)
+	assert.Equal(t, "/test", gosplitter.RegisteredPatterns["rPoint"].Children["/test"].URL)
 }
