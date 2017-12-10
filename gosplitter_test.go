@@ -1,6 +1,7 @@
 package gosplitter_test
 
 import (
+	"fmt"
 	"net/http"
 	"testing"
 
@@ -38,61 +39,36 @@ type handler struct{}
 
 func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {}
 
-type handlerFunc struct{}
-
-func (h handlerFunc) Handle(w http.ResponseWriter, r *http.Request) {}
-
+func handlerFunc(w http.ResponseWriter, r *http.Request) {}
 func TestRegisterHandler(t *testing.T) {
-	var h handler
-	var hf handlerFunc
-	var err error
-	var mux = http.NewServeMux()
-	var testWithChildrenOne = "twc1"
-	var testWithChildrenTwo = "twc2"
-	/**
-	* Test register Handler without children
-	 */
-	err = gosplitter.RegisterHandler("/test", "testRegisterHandler", h, mux)
+	var (
+		h      handler
+		hf     = handlerFunc
+		caller = "caller"
+		mux    = http.NewServeMux()
+		point  gosplitter.RouterPoint
+	)
+	gosplitter.RegisterHandler("/test1", caller, h, mux)
 
-	assert.Equal(t, nil, err)
-	assert.Equal(t, h, gosplitter.RegisteredPatterns["testRegisterHandler"].Handler)
+	assert.Equal(t, h, gosplitter.RegisteredPatterns[caller].Handler)
 
-	// Test with children case one
-	gosplitter.RegisteredPatterns[testWithChildrenOne] = &gosplitter.RouterPoint{
-		URL: "/test/child1",
-	}
-	err = gosplitter.RegisterHandler("/handler", testWithChildrenOne, h, mux)
+	gosplitter.RegisteredPatterns[caller] = nil
 
-	assert.Equal(t, nil, err)
-	assert.Equal(t, h, gosplitter.RegisteredPatterns[testWithChildrenOne].Children["/handler"].Handler)
+	gosplitter.RegisterHandler("/test2", caller, hf, mux)
 
-	err = gosplitter.RegisterHandler("/handler/func", testWithChildrenOne, hf, mux)
+	// t.Logf("%+v\n", gosplitter.RegisteredPatterns)
 
-	assert.Equal(t, nil, err)
-	assert.Equal(t, hf, gosplitter.RegisteredPatterns[testWithChildrenOne].Children["/handler/func"].HandlerFunc)
+	point = *gosplitter.RegisteredPatterns[caller]
+	assert.Equal(t, fmt.Sprintf("%v", hf), fmt.Sprintf("%v", point.HandlerFunc))
 
-	// Test with children case two
-	gosplitter.RegisteredPatterns[testWithChildrenTwo] = &gosplitter.RouterPoint{
-		URL: "/test/child2",
+	gosplitter.RegisteredPatterns[caller] = &gosplitter.RouterPoint{
+		URL: "/test",
 	}
 
-	err = gosplitter.RegisterHandler("/handler/func", testWithChildrenTwo, hf, mux)
+	gosplitter.RegisterHandler("/nested", caller, hf, mux)
+	point = *gosplitter.RegisteredPatterns[caller]
+	assert.Equal(t, "/test/nested", point.URL)
 
-	assert.Equal(t, nil, err)
-	assert.Equal(t, hf, gosplitter.RegisteredPatterns[testWithChildrenTwo].Children["/handler/func"].HandlerFunc)
-
-	err = gosplitter.RegisterHandler("/handler", testWithChildrenTwo, h, mux)
-
-	assert.Equal(t, nil, err)
-	assert.Equal(t, h, gosplitter.RegisteredPatterns[testWithChildrenTwo].Children["/handler"].Handler)
-
-	err = gosplitter.RegisterHandler("/test", "testRegisterHandler", h, mux)
-	assert.Equal(t, "pattern /test already registered", err.Error())
-
-	err = gosplitter.RegisterHandler("/test2", "testRegisterHandlerFunc", hf, mux)
-
-	assert.Equal(t, nil, err)
-	assert.Equal(t, hf, gosplitter.RegisteredPatterns["testRegisterHandlerFunc"].HandlerFunc)
 }
 
 // Test registerRouterPoint
@@ -101,9 +77,9 @@ type rPoint struct{}
 func TestRegisterRouterPoint(t *testing.T) {
 	var err error
 	var p rPoint
-	err = gosplitter.RegisterRouterPoint("/test", p)
+	gosplitter.RegisterRouterPoint(gosplitter.CallerContext(), "/test", p)
 
 	assert.Equal(t, nil, err)
-	t.Logf("%v\n", gosplitter.RegisteredPatterns)
-	assert.Equal(t, "/test", gosplitter.RegisteredPatterns["rPoint"].Children["/test"].URL)
+	// t.Logf("%v\n", gosplitter.RegisteredPatterns)
+	assert.Equal(t, "/test", gosplitter.RegisteredPatterns["rPoint"].URL)
 }

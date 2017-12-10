@@ -30,17 +30,23 @@ func CallerContext() string {
 	if f == nil {
 		return "n/a"
 	}
+	var result = unstar(unbrace(unslash(f.Name())))
 
-	return unslash(f.Name())
+	// fmt.Printf("RETURNING %s\n", result)
+
+	return result
 }
 
 // GetFunctionName func
 func GetFunctionName(myvar interface{}) string {
+	var result string
 	if t := reflect.TypeOf(myvar); t.Kind() == reflect.Ptr {
-		return "*" + t.Elem().Name()
+		result = t.Elem().Name()
 	} else {
-		return t.Name()
+		result = t.Name()
 	}
+
+	return result
 }
 
 func unslash(s string) string {
@@ -51,4 +57,15 @@ func unslash(s string) string {
 func undot(s string) string {
 	r := strings.Split(s, ".")
 	return r[len(r)-1]
+}
+
+func unbrace(s string) string {
+	var result string
+	result = strings.Replace(s, "(", "", -1)
+	result = strings.Replace(result, ")", "", -1)
+	return result
+}
+
+func unstar(s string) string {
+	return strings.Replace(s, "*", "", -1)
 }
