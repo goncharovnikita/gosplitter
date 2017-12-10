@@ -1,5 +1,7 @@
 # Go Splitter
 
+[![Build Status](https://travis-ci.org/goncharovnikita/gosplitter.svg?branch=master)](https://travis-ci.org/goncharovnikita/gosplitter)
+
 Library for convenient HTTP route splitting
 
 ## What for ?
