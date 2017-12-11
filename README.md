@@ -2,8 +2,8 @@
 
 [![Build Status](https://travis-ci.org/goncharovnikita/gosplitter.svg?branch=master)](https://travis-ci.org/goncharovnikita/gosplitter) 
 [![GoDoc](https://godoc.org/github.com/goncharovnikita/gosplitter?status.svg)](https://godoc.org/github.com/goncharovnikita/gosplitter)
-[![Go Report Card](https://goreportcard.com/badge/github.com/goncharovnikita/gosplitter)]
-[![Coverage](http://gocover.io/_badge/github.com/goncharovnikita/gosplitter)](http://gocover.io/github.com/goncharovnikita/gosplitter)(https://goreportcard.com/report/github.com/goncharovnikita/gosplitter)
+[![Go Report Card](https://goreportcard.com/badge/github.com/goncharovnikita/gosplitter)](https://goreportcard.com/report/github.com/goncharovnikita/gosplitter)
+[![Coverage](http://gocover.io/_badge/github.com/goncharovnikita/gosplitter)](http://gocover.io/github.com/goncharovnikita/gosplitter)
 
 Library for convenient HTTP route splitting
 
